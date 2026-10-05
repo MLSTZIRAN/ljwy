@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>令季物语</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { 
+    background: #e8e6df; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    min-height: 100vh; 
+    font-family: 'SimSun', 'STSong', 'Songti SC', serif; 
+    touch-action: none; 
+    overflow: hidden; 
+}
+#gameContainer { 
+    position: relative; 
+    max-width: 460px; 
+    width: 99%; 
+}
+#main-screen { 
+    background: #f8f7f2; 
+    display: flex; 
+    flex-direction: column; 
+    border: 2px solid #16161a; 
+    width: 100%; 
+    aspect-ratio: 432 / 758; 
+    position: relative; 
+    overflow: hidden; 
+}
+.btn { 
+    background: #fff; 
+    border: 2px solid #16161a; 
+    cursor: pointer; 
+    font-family: inherit; 
+    box-shadow: 3px 3px 0 #16161a; 
+    transition: transform 0.05s, box-shadow 0.05s; 
+    user-select: none; 
+    color: #16161a; 
+}
+.btn:active { 
+    transform: translate(2px, 2px); 
+    box-shadow: 1px 1px 0 #16161a; 
+}
+.btn:disabled { 
+    opacity: 0.4; 
+    cursor: not-allowed; 
+    transform: none !important; 
+    box-shadow: 3px 3px 0 #16161a !important; 
+}
+.btn.active-tab {
+    background: #16161a;
+    color: #f8f7f2;
+    box-shadow: 3px 3px 0 #555;
+}
+.card { 
+    background: #fff; 
+    border: 2px solid #16161a; 
+    cursor: pointer; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    padding: 8px; 
+    box-shadow: 3px 3px 0 #16161a; 
+    user-select: none; 
+    transition: transform 0.05s; 
+}
+.card:active { 
+    transform: translate(2px, 2px); 
+    box-shadow: 1px 1px 0 #16161a; 
+}
+#overlay { 
+    display: none; 
+    position: absolute; 
+    top: 0; left: 0; right: 0; bottom: 0; 
+    background: rgba(248, 247, 242, 0.96); 
+    z-index: 10; 
+    justify-content: center; 
+    align-items: center; 
+    flex-direction: column; 
+    padding: 16px; 
+    overflow-y: auto; 
+}
+#overlay.show { display: flex; }
+.overlay-title { 
+    color: #16161a; 
+    font-size: 20px; 
+    font-weight: bold; 
+    margin-bottom: 12px; 
+    letter-spacing: 2px; 
+}
+.overlay-row { 
+    display: flex; 
+    gap: 10px; 
+    justify-content: center; 
+    flex-wrap: wrap; 
+    width: 100%; 
+}
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.flex-1 { flex: 1; }
+.grid { display: grid; }
+.gap-2 { gap: 8px; }
+.gap-3 { gap: 12px; }
+.p-2 { padding: 8px; }
+.p-3 { padding: 12px; }
+.text-center { text-align: center; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.relative { position: relative; }
+.absolute { position: absolute; }
+.w-full { width: 100%; }
+.h-full { height: 100%; }
+.scroll { 
+    overflow-y: auto; 
+    scrollbar-width: thin; 
+    scrollbar-color: #16161a #f8f7f2; 
+}
+.scroll::-webkit-scrollbar { width: 6px; }
+.scroll::-webkit-scrollbar-track { background: #f8f7f2; }
+.scroll::-webkit-scrollbar-thumb { background: #16161a; }
+.hud { 
+    border-bottom: 2px solid #16161a; 
+    background: #f8f7f2; 
+    padding: 6px 10px; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 4px; 
+    font-size: 12px; 
+    font-weight: bold; 
+    color: #16161a; 
+}
+.hud-row { display: flex; justify-content: space-between; align-items: center; }
+.nav { 
+    border-top: 2px solid #16161a; 
+    background: #f8f7f2; 
+    padding: 6px; 
+    display: grid; 
+    grid-template-columns: repeat(5, 1fr); 
+    gap: 6px; 
+}
+.nav-btn { 
+    padding: 6px 2px; 
+    font-size: 13px; 
+    text-align: center; 
+}
+.nav-btn.active { 
+    background: #16161a; 
+    color: #f8f7f2; 
+    box-shadow: 3px 3px 0 #555; 
+}
+.plot { 
+    background: #fff; 
+    border: 2px solid #16161a; 
+    box-shadow: 2px 2px 0 #16161a; 
+    position: relative; 
+    cursor: pointer; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    aspect-ratio: 1; 
+    font-size: 28px; 
+}
+.plot:active { 
+    transform: translate(1px, 1px); 
+    box-shadow: 1px 1px 0 #16161a; 
+}
+.plot.planted { background: #f0efe9; }
+@keyframes float {
+    0% { transform: translateY(0px); opacity: 1; }
+    100% { transform: translateY(-20px); opacity: 0; }
+}
+.float-text {
+    position: absolute;
+    animation: float 1s ease-out forwards;
+    pointer-events: none;
+    font-weight: bold;
+    color: #16161a;
+    z-index: 50;
+    font-family: 'SimSun', serif;
+    font-size: 16px;
+}
+@keyframes pop {
+    0% { transform: scale(0.8); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+.pop-anim { animation: pop 0.2s ease-in-out; }
+#notification-area {
+    position: absolute;
+    top: 72px;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 0 10px;
+}
+.notify {
+    background: #16161a;
+    color: #f8f7f2;
+    padding: 6px 12px;
+    border: 1px solid #16161a;
+    box-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+    font-size: 13px;
+    text-align: center;
+    animation: slideIn 0.3s ease-out;
+}
+@keyframes slideIn {
+    from { transform: translateY(-10px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+.seed-tip {
+    color: #8b0000;
+    font-size: 13px;
+    margin-top: 8px;
+    min-height: 20px;
+    text-align: center;
+}
+.flower-field {
+    border: 2px solid #16161a;
+    background: #fff;
+    padding: 12px;
+    margin-bottom: 12px;
+    box-shadow: 2px 2px 0 #16161a;
+    cursor: pointer;
+    transition: transform 0.05s;
+}
+.flower-field:active {
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0 #16161a;
+}
+.flower-field-title {
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 6px;
+}
+.flower-field-desc {
+    font-size: 11px;
+    color: #555;
+}
+
+/* 横屏适配 */
+@media (orientation: landscape) {
+    body { align-items: stretch; }
+    #gameContainer {
+        max-width: 100%;
+        width: 100%;
+        height: 100vh;
+    }
+    #main-screen {
+        width: 100%;
+        height: 100%;
+        aspect-ratio: auto;
+        flex-direction: row;
+    }
+    .nav {
+        order: -1;
+        width: 80px;
+        flex-shrink: 0;
+        height: 100%;
+        border-top: none;
+        border-right: 2px solid #16161a;
+        grid-template-columns: none;
+        grid-template-rows: repeat(5, 1fr);
+        padding: 4px;
+        gap: 4px;
+    }
+    .nav-btn {
+        padding: 4px 2px;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .hud {
+        position: absolute;
+        top: 0;
+        left: 80px;
+        right: 0;
+        height: 36px;
+        z-index: 10;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 12px;
+        background: #f8f7f2;
+        border-bottom: 2px solid #16161a;
+    }
+    .hud-row {
+        flex-direction: row;
+        gap: 12px;
+        font-size: 12px;
+    }
+    #notification-area {
+        top: 36px;
+        left: 80px;
+        right: 0;
+        padding: 0 10px;
+        align-items: center;
+    }
+    .notify {
+        width: auto;
+        max-width: 80%;
+    }
+    #main-view {
+        margin-top: 36px;
+        margin-left: 80px;
+        width: calc(100% - 80px);
+        height: calc(100% - 36px);
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+    }
+    .view-container {
+        width: 100%;
+        max-width: 880px;
+        margin: 0 auto;
+    }
+    
+    /* 横屏下规整的网格方阵 */
+    .farm-grid { grid-template-columns: repeat(6, 1fr) !important; }
+    .barn-grid { grid-template-columns: repeat(4, 1fr) !important; }
+    .market-grid { grid-template-columns: repeat(4, 1fr) !important; }
+    .craft-grid { grid-template-columns: repeat(2, 1fr) !important; }
+    
+    #overlay {
+        justify-content: flex-start;
+        padding: 20px;
+    }
+    #overlay-content {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+}
+</style>
+</head>
+<body>
+
+<div id="gameContainer">
+    <div id="main-screen">
+        <div class="hud">
+            <div class="hud-row">
+                <div>💰 <span id="gold-display">0</span> 元</div>
+                <div id="rt-clock">--:--:--</div>
+            </div>
+            <div class="hud-row" style="font-size:11px; font-weight:normal; opacity:0.85;">
+                <div>第 <span id="day-display">1</span> 天</div>
+                <div id="rt-date">--月--日</div>
+                <div id="rt-season">--</div>
+                <div id="rt-weather">定位中...</div>
+                <div id="rt-temp"></div>
+            </div>
+        </div>
+        
+        <div id="notification-area"></div>
+
+        <div id="main-view" class="flex-1 scroll p-3 relative"></div>
+
+        <div class="nav">
+            <button class="btn nav-btn active" data-view="farm">农场</button>
+            <button class="btn nav-btn" data-view="barn">牧场</button>
+            <button class="btn nav-btn" data-view="market">商店</button>
+            <button class="btn nav-btn" data-view="craft">工坊</button>
+            <button class="btn nav-btn" data-view="map">探索</button>
+        </div>
+    </div>
+
+    <div id="overlay">
+        <div class="overlay-title" id="overlay-title"></div>
+        <div id="overlay-tabs" class="flex gap-2" style="margin-bottom:10px;"></div>
+        <div class="overlay-row" id="overlay-content"></div>
+        <div class="seed-tip" id="seed-tip"></div>
+        <button class="btn mt-4" id="overlay-close" style="padding: 8px 32px; font-size: 16px; margin-top: 12px;">关闭</button>
+    </div>
+</div>
+
+<script>
+'use strict';
+const T={std:{c:{f:4000,q:5,g:.5,d:.014,w:.1},b:{f:1800,q:1.3,g:.68,d:.02,w:.42,dur:.004},o:{f:620,q:1.1,g:.36,d:.03,w:.3,dur:.009}},big:{c:{f:3300,q:4.5,g:.42,d:.014,w:.12},b:{f:1250,q:1.2,g:.9,d:.026,w:.55,dur:.005},o:{f:450,q:1.1,g:.52,d:.038,w:.4,dur:.011},wire:{f:3300,q:16,g:.12,d:.05,w:.45}},space:{c:{f:2500,q:4,g:.18,d:.012,w:.1},b:{f:880,q:1.1,g:1,d:.034,w:.72,dur:.006},o:{f:290,q:1,g:.62,d:.052,w:.55,dur:.015},wire:{f:3050,q:15,g:.2,d:.06,w:.5}}};
+const SW={blue:{click:1,rc:1,spring:!0,fric:!1}};
+const IR_CFG={plate:{len:.38,modes:26,fLo:140,fHi:4200,tauLo:.125,tauHi:.032,diffuse:.014,dTau:.018,norm:.62,extra:[{f:220,tau:.09,a:.22},{f:340,tau:.07,a:.18},{f:1800,tau:.05,a:.25}]}};
+let AC=null,dryBus,convolver,wetBus,volNode,noiseBuf,springBufs=[],curIR=null;
+const rand=(a,b)=>a+Math.random()*(b-a);
+function initAudio(){if(AC){if(AC.state==='suspended')AC.resume();return}AC=new(window.AudioContext||window.webkitAudioContext)({latencyHint:'interactive'});volNode=AC.createGain();volNode.gain.value=0.6;volNode.connect(AC.destination);const comp=AC.createDynamicsCompressor();comp.threshold.value=-14;comp.knee.value=8;comp.ratio.value=3.5;comp.attack.value=.001;comp.release.value=.12;comp.connect(volNode);dryBus=AC.createGain();dryBus.gain.value=.75;dryBus.connect(comp);convolver=AC.createConvolver();curIR='plate';convolver.buffer=makeIR('plate');const shelf=AC.createBiquadFilter();shelf.type='highshelf';shelf.frequency.value=5200;shelf.gain.value=-3.5;wetBus=AC.createGain();wetBus.gain.value=.5;convolver.connect(shelf);shelf.connect(wetBus);wetBus.connect(comp);noiseBuf=makeNoise();springBufs=[];for(let i=0;i<3;i++)springBufs.push(makeSpringPing())}
+function makeNoise(){const sr=AC.sampleRate,len=sr*2;const buf=AC.createBuffer(2,len,sr);for(let ch=0;ch<2;ch++){const d=buf.getChannelData(ch);for(let i=0;i<len;i++)d[i]=Math.random()*2-1}return buf}
+function makeSpringPing(){const sr=AC.sampleRate,len=Math.floor(sr*.12);const buf=AC.createBuffer(2,len,sr);for(let ch=0;ch<2;ch++){const d=buf.getChannelData(ch);const base=rand(3350,3750);const ps=[{r:1,a:1,tau:.042},{r:1.033,a:.5,tau:.028},{r:.52,a:.12,tau:.016},{r:2.02,a:.15,tau:.012},{r:2.97,a:.06,tau:.008}];for(const pt of ps){const f=base*pt.r*(ch?rand(.997,1.003):1),w=2*Math.PI*f/sr,k=1/(sr*pt.tau),ph=rand(0,Math.PI*2);for(let n=0;n<len;n++){const e=Math.exp(-n*k);if(e<.0003)break;d[n]+=pt.a*e*Math.cos(w*n+ph)}}for(let n=0;n<len;n++)d[n]+=(Math.random()*2-1)*.035*Math.exp(-n/(sr*.0015))}let peak=0;for(let ch=0;ch<2;ch++){const d=buf.getChannelData(ch);for(let n=0;n<len;n++){const a=Math.abs(d[n]);if(a>peak)peak=a}}const norm=.4/peak;for(let ch=0;ch<2;ch++){const d=buf.getChannelData(ch);for(let n=0;n<len;n++)d[n]*=norm}return buf}
+function makeIR(kind){const c=IR_CFG[kind];const sr=AC.sampleRate;const len=Math.floor(sr*c.len);const buf=AC.createBuffer(2,len,sr);const fSpan=c.fHi/c.fLo;for(let ch=0;ch<2;ch++){const d=buf.getChannelData(ch);for(let m=0;m<c.modes;m++){const hi=m/(c.modes-1);const fr=c.fLo*Math.pow(fSpan,hi)*rand(.92,1.08);const tau=(c.tauLo*(1-hi)+c.tauHi*hi)*rand(.6,1.4);const amp=rand(.45,1)*(.8+.2*Math.sin(m*2.13+ch*1.7));const ph=rand(0,Math.PI*2);const w=2*Math.PI*fr/sr,k=1/(sr*tau);for(let n=0;n<len;n++){const e=Math.exp(-n*k);if(e<.0004)break;d[n]+=amp*e*Math.cos(w*n+ph)}}for(const ex of c.extra){const fr=ex.f*rand(.985,1.015);const w=2*Math.PI*fr/sr,k=1/(sr*ex.tau);const ph=rand(0,Math.PI*2);const a=ex.a*(ch?.85:1);for(let n=0;n<len;n++){const e=Math.exp(-n*k);if(e<.0004)break;d[n]+=a*e*Math.cos(w*n+ph)}}for(let n=0;n<len;n++)d[n]+=(Math.random()*2-1)*c.diffuse*Math.exp(-n/(sr*c.dTau))}let peak=0;for(let ch=0;ch<2;ch++){const d=buf.getChannelData(ch);for(let n=0;n<len;n++){const a=Math.abs(d[n]);if(a>peak)peak=a}}const norm=c.norm/peak;for(let ch=0;ch<2;ch++){const d=buf.getChannelData(ch);for(let n=0;n<len;n++)d[n]*=norm}return buf}
+function strike(t,o){const dur=o.dur||.003;const src=AC.createBufferSource();src.buffer=noiseBuf;const flt=AC.createBiquadFilter();flt.type=o.type||'bandpass';flt.frequency.value=Math.min(12000,Math.max(40,o.f));flt.Q.value=o.q||1;const env=AC.createGain();const atk=o.softAtk||.0004;env.gain.setValueAtTime(0,t);env.gain.linearRampToValueAtTime(1,t+atk);env.gain.setTargetAtTime(0,t+Math.max(atk,dur-.001),.0012);src.connect(flt);flt.connect(env);let out=env;if(AC.createStereoPanner){const pan=AC.createStereoPanner();pan.pan.value=o.pan||0;env.connect(pan);out=pan}const dry=AC.createGain();dry.gain.value=o.g;out.connect(dry);dry.connect(dryBus);if(o.wet){const wet=AC.createGain();wet.gain.value=o.wet;out.connect(wet);wet.connect(convolver)}const maxOff=Math.max(.01,noiseBuf.duration-dur-.05);src.start(t,Math.random()*maxOff,dur+.012)}
+function ring(t,o){const src=AC.createBufferSource();src.buffer=o.buf;src.playbackRate.value=o.rate||1;const env=AC.createGain();env.gain.setValueAtTime(0,t);env.gain.linearRampToValueAtTime(o.g,t+.0008);env.gain.setTargetAtTime(0,t+.12,.03);src.connect(env);let out=env;if(AC.createStereoPanner){const pan=AC.createStereoPanner();pan.pan.value=o.pan||0;env.connect(pan);out=pan}out.connect(dryBus);if(o.wet){const wet=AC.createGain();wet.gain.value=o.wet;out.connect(wet);wet.connect(convolver)}src.start(t)}
+function pressCherry(p){if(!AC)return;const t=AC.currentTime+.0005;const tp=T[p.type],sw=SW.blue;const Rr=()=>rand(.92,1.08),G=()=>rand(.82,1.18);if(sw.fric)strike(t+.001,{f:2500,q:.7,g:.05*p.gv,d:.02,dur:.013,wet:.04,pan:p.pan,softAtk:.003});if(sw.click>0){strike(t+rand(.002,.005),{f:tp.c.f*p.fm*Rr(),q:tp.c.q,g:tp.c.g*sw.click*p.gv*G(),d:tp.c.d,wet:tp.c.w,pan:p.pan});if(sw.click>.5)strike(t+.0042,{f:6900,q:.7,type:'highpass',g:.14*p.gv*G(),d:.006,wet:.03,pan:p.pan})}const tb=t+rand(.006,.011);const soft=sw.fric?.85:1;strike(tb,{f:tp.b.f*p.fm*Rr()*soft,q:tp.b.q,g:tp.b.g*p.gv*G(),d:tp.b.d,dur:tp.b.dur,wet:tp.b.w,pan:p.pan});strike(tb+.0006,{f:tp.o.f*p.fm*Rr(),q:tp.o.q,g:tp.o.g*p.gv*G()*(sw.fric?1.2:1),d:tp.o.d,dur:tp.o.dur,wet:tp.o.w,pan:p.pan});if(tp.wire)strike(tb+.001,{f:tp.wire.f*p.fm*rand(.95,1.05),q:tp.wire.q,g:tp.wire.g*p.gv*G(),d:tp.wire.d,wet:tp.wire.w,pan:p.pan});if(sw.spring&&Math.random()<.25)strike(tb+rand(.001,.004),{f:5400*p.fm*Rr(),q:22,g:.09*G(),d:.035,wet:.4,pan:p.pan})}
+function releaseCherry(p){if(!AC)return;const t=AC.currentTime+.0005;const sw=SW.blue;const Rr=()=>rand(.93,1.07);if(sw.rc>0)strike(t+rand(0,.002),{f:3300*p.fm*Rr(),q:5,g:.15*sw.rc*p.gv*rand(.85,1.15),d:.01,wet:.08,pan:p.pan});strike(t+rand(.004,.007),{f:(p.type==='space'?850:p.type==='big'?1200:1500)*p.fm*Rr(),q:1,g:(p.type==='space'?.48:p.type==='big'?.32:.2)*p.gv*rand(.8,1.2),d:.018,dur:.004,wet:p.type==='space'?.5:.3,pan:p.pan});if(p.type==='space'||(p.type==='big'&&Math.random()<.6))strike(t+.008,{f:2700*p.fm*Rr(),q:14,g:p.type==='space'?.11:.06,d:.045,wet:.45,pan:p.pan})}
+function playClickSound(type='std'){if(!AC)initAudio();const profile={type,fm:1,gv:0.9+Math.random()*0.2,pan:(Math.random()-0.5)*0.3};pressCherry(profile);setTimeout(()=>releaseCherry(profile),70);}
+
+const CONFIG = {
+    tickRate: 1000,
+    dayLength: 60,
+    seasons: ['Spring', 'Summer', 'Fall', 'Winter'],
+    weatherTypes: ['Sunny', 'Rainy', 'Cloudy'],
+    crops: {
+        wheat: { name: '小麦', icon: '🌾', cost: 8, sell: 15, growthTime: 5, seasons: ['Spring', 'Summer'], category: 'vegetable' },
+        corn: { name: '玉米', icon: '🌽', cost: 18, sell: 32, growthTime: 10, seasons: ['Summer', 'Fall'], category: 'vegetable' },
+        carrot: { name: '胡萝卜', icon: '🥕', cost: 8, sell: 15, growthTime: 7, seasons: ['Spring', 'Winter'], category: 'vegetable' },
+        pumpkin: { name: '南瓜', icon: '🎃', cost: 35, sell: 75, growthTime: 20, seasons: ['Fall'], category: 'vegetable' },
+        strawberry: { name: '草莓', icon: '🍓', cost: 25, sell: 55, growthTime: 15, seasons: ['Spring'], category: 'fruit' },
+        tomato: { name: '番茄', icon: '🍅', cost: 12, sell: 22, growthTime: 8, seasons: ['Spring', 'Summer'], category: 'vegetable' },
+        potato: { name: '土豆', icon: '🥔', cost: 8, sell: 15, growthTime: 6, seasons: ['Winter', 'Spring'], category: 'vegetable' },
+        eggplant: { name: '茄子', icon: '🍆', cost: 18, sell: 32, growthTime: 9, seasons: ['Summer', 'Fall'], category: 'vegetable' },
+        watermelon: { name: '西瓜', icon: '🍉', cost: 40, sell: 85, growthTime: 18, seasons: ['Summer'], category: 'fruit' },
+        grape: { name: '葡萄', icon: '🍇', cost: 30, sell: 65, growthTime: 14, seasons: ['Fall'], category: 'fruit' },
+        peach: { name: '桃子', icon: '🍑', cost: 22, sell: 48, growthTime: 12, seasons: ['Spring'], category: 'fruit' },
+        cabbage: { name: '白菜', icon: '🥬', cost: 5, sell: 12, growthTime: 4, seasons: ['Fall', 'Winter'], category: 'vegetable' },
+        chili: { name: '辣椒', icon: '🌶️', cost: 15, sell: 35, growthTime: 11, seasons: ['Summer', 'Fall'], category: 'vegetable' },
+        apple: { name: '苹果', icon: '🍎', cost: 28, sell: 58, growthTime: 16, seasons: ['Fall', 'Winter'], category: 'fruit' },
+        cherry: { name: '樱桃', icon: '🍒', cost: 45, sell: 95, growthTime: 22, seasons: ['Spring'], category: 'fruit' }
+    },
+    flowers: {
+        osmanthus: { name: '桂花', icon: '🌼', season: 'Fall', sell: 25, desc: '秋日金桂，香气袭人' },
+        camellia: { name: '山茶花', icon: '🌺', season: 'Spring', sell: 22, desc: '春日山茶，娇艳欲滴' }
+    },
+    fish: {
+        grass_carp: { name: '草鱼', icon: '🐟', sell: 18, desc: '湖泊常见淡水鱼' },
+        crucian: { name: '鲫鱼', icon: '🐠', sell: 22, desc: '肉质鲜美的淡水鱼' }
+    },
+    animals: {
+        chicken: { name: '母鸡', icon: '🐔', cost: 150, product: 'egg', productIcon: '🥚', productPrice: 20, interval: 10 },
+        cow: { name: '奶牛', icon: '🐮', cost: 600, product: 'milk', productIcon: '🥛', productPrice: 60, interval: 20 },
+        sheep: { name: '绵羊', icon: '🐑', cost: 450, product: 'wool', productIcon: '🧶', productPrice: 90, interval: 30 },
+        duck: { name: '鸭子', icon: '🦆', cost: 200, product: 'duck_egg', productIcon: '🥚', productPrice: 28, interval: 12 },
+        rabbit: { name: '兔子', icon: '🐰', cost: 350, product: 'rabbit_wool', productIcon: '🧵', productPrice: 70, interval: 18 },
+        bee: { name: '蜜蜂', icon: '🐝', cost: 280, product: 'honey', productIcon: '🍯', productPrice: 55, interval: 15 },
+        goat: { name: '山羊', icon: '🐐', cost: 500, product: 'goat_milk', productIcon: '🥛', productPrice: 45, interval: 14 },
+        pig: { name: '猪', icon: '🐷', cost: 380, product: 'truffle', productIcon: '🍄', productPrice: 120, interval: 35 },
+        ostrich: { name: '鸵鸟', icon: '🦃', cost: 550, product: 'ostrich_egg', productIcon: '🥚', productPrice: 85, interval: 25 },
+        silkworm: { name: '蚕', icon: '🐛', cost: 220, product: 'silk', productIcon: '🧣', productPrice: 100, interval: 22 }
+    },
+    recipes: {
+        bread: { name: '面包', icon: '🍞', ingredients: { wheat: 2 }, sell: 40, time: 5 },
+        cake: { name: '蛋糕', icon: '🍰', ingredients: { wheat: 2, egg: 2, milk: 1 }, sell: 180, time: 15 },
+        sweater: { name: '毛衣', icon: '🧥', ingredients: { wool: 3 }, sell: 350, time: 20 },
+        dried_osmanthus: { name: '干桂花', icon: '🍂', ingredients: { osmanthus: 2 }, sell: 55, time: 8, category: 'dry' },
+        dried_camellia: { name: '干山茶花', icon: '🥀', ingredients: { camellia: 2 }, sell: 48, time: 8, category: 'dry' },
+        osmanthus_cake: { name: '桂花糕', icon: '🥮', ingredients: { osmanthus: 3, wheat: 1 }, sell: 120, time: 12, category: 'food' },
+        osmanthus_tea: { name: '桂花茶', icon: '🍵', ingredients: { dried_osmanthus: 2 }, sell: 95, time: 6, category: 'tea' },
+        camellia_tea: { name: '山茶花茶', icon: '🫖', ingredients: { dried_camellia: 2 }, sell: 88, time: 6, category: 'tea' },
+        flower_gift_box: { name: '花茶礼盒', icon: '🎁', ingredients: { osmanthus_tea: 1, camellia_tea: 1, dried_osmanthus: 1 }, sell: 280, time: 15, category: 'gift' },
+        osmanthus_honey_tea: { name: '桂花蜜茶', icon: '🍯', ingredients: { dried_osmanthus: 2, wheat: 1 }, sell: 150, time: 10, category: 'tea' },
+        fish_soup: { name: '鲜鱼汤', icon: '🥣', ingredients: { grass_carp: 2, crucian: 1 }, sell: 85, time: 10, category: 'food' },
+        spicy_fish: { name: '剁椒鱼头', icon: '🌶️', ingredients: { grass_carp: 1, chili: 2 }, sell: 110, time: 12, category: 'food' },
+        honey_cake: { name: '蜂蜜蛋糕', icon: '🧁', ingredients: { honey: 2, wheat: 1 }, sell: 160, time: 12, category: 'food' },
+        silk_scarf: { name: '丝绸围巾', icon: '🧣', ingredients: { silk: 2 }, sell: 280, time: 18, category: 'other' },
+        truffle_soup: { name: '松露炖汤', icon: '🍲', ingredients: { truffle: 1, potato: 2 }, sell: 200, time: 14, category: 'food' }
+    }
+};
+
+function createDefaultState() {
+    return {
+        gold: 100,
+        day: 1,
+        seasonIndex: 1,
+        weatherIndex: 0,
+        timeOfDay: 0,
+        inventory: {},
+        plots: Array(12).fill(null).map(() => ({ status: 'empty', cropId: null, plantTime: 0, progress: 0 })),
+        animals: [],
+        craftingQueue: [],
+        lastTick: Date.now(),
+        flowerFieldCooldown: 0
+    };
+}
+
+let state = createDefaultState();
+
+const SAVE_KEY = 'pixelFarmSave_v7';
+
+function deepClone(obj) {
+    return JSON.parse(JSON.stringify(obj));
+}
+
+function serializeState() {
+    return JSON.stringify({
+        gold: state.gold,
+        day: state.day,
+        seasonIndex: state.seasonIndex,
+        weatherIndex: state.weatherIndex,
+        timeOfDay: state.timeOfDay,
+        inventory: state.inventory,
+        plots: state.plots,
+        animals: state.animals,
+        craftingQueue: state.craftingQueue,
+        lastTick: Date.now(),
+        flowerFieldCooldown: state.flowerFieldCooldown
+    });
+}
+
+function deserializeState(jsonStr) {
+    try {
+        const parsed = JSON.parse(jsonStr);
+        const defaultState = createDefaultState();
+        const result = {};
+        for (const key in defaultState) {
+            if (parsed.hasOwnProperty(key)) {
+                result[key] = parsed[key];
+            } else {
+                result[key] = defaultState[key];
+            }
+        }
+        if (!Array.isArray(result.plots) || result.plots.length !== 12) {
+            result.plots = defaultState.plots;
+        }
+        for (let i = 0; i < result.plots.length; i++) {
+            const p = result.plots[i];
+            if (!p || typeof p !== 'object') {
+                result.plots[i] = deepClone(defaultState.plots[0]);
+            } else {
+                if (!p.status) p.status = 'empty';
+                if (!p.cropId) p.cropId = null;
+                if (typeof p.progress !== 'number') p.progress = 0;
+            }
+        }
+        if (!Array.isArray(result.animals)) result.animals = [];
+        if (!Array.isArray(result.craftingQueue)) result.craftingQueue = [];
+        if (!result.inventory || typeof result.inventory !== 'object') result.inventory = {};
+        if (typeof result.gold !== 'number') result.gold = 100;
+        if (typeof result.day !== 'number') result.day = 1;
+        if (typeof result.seasonIndex !== 'number') result.seasonIndex = 1;
+        if (typeof result.weatherIndex !== 'number') result.weatherIndex = 0;
+        if (typeof result.timeOfDay !== 'number') result.timeOfDay = 0;
+        if (typeof result.flowerFieldCooldown !== 'number') result.flowerFieldCooldown = 0;
+        result.lastTick = Date.now();
+        return result;
+    } catch (e) {
+        return createDefaultState();
+    }
+}
+
+function startClock(){
+    setInterval(()=>{
+        const now=new Date();
+        document.getElementById('rt-clock').textContent=now.toLocaleTimeString('zh-CN',{hour12:false});
+        document.getElementById('rt-date').textContent=(now.getMonth()+1)+'月'+now.getDate()+'日';
+        const m=now.getMonth()+1;
+        const s=m>=3&&m<=5?'春':m>=6&&m<=8?'夏':m>=9&&m<=11?'秋':'冬';
+        document.getElementById('rt-season').textContent=s;
+        const sIdx=m>=3&&m<=5?0:m>=6&&m<=8?1:m>=9&&m<=11?2:3;
+        state.seasonIndex=sIdx;
+    },1000);
+}
+function initWeather(){
+    if(!navigator.geolocation){fallbackWeather();return;}
+    navigator.geolocation.getCurrentPosition(
+        pos=>updateWeather(pos.coords.latitude,pos.coords.longitude),
+        err=>fallbackWeather()
+    );
+}
+function fallbackWeather(){ updateWeather(39.9,116.4); }
+async function updateWeather(lat,lon){
+    try{
+        const res=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
+        const data=await res.json();
+        const cw=data.current_weather;
+        document.getElementById('rt-temp').textContent=cw.temperature+'°C';
+        const code=cw.weathercode;
+        let w='晴',icon='☀️',wIdx=0;
+        if(code>0&&code<=3){w='多云';icon='⛅';wIdx=2;}
+        else if(code>=45&&code<=48){w='雾';icon='🌫️';wIdx=2;}
+        else if(code>=51&&code<=55){w='毛毛雨';icon='🌦️';wIdx=1;}
+        else if(code>=61&&code<=65){w='雨';icon='🌧️';wIdx=1;}
+        else if(code>=71&&code<=77){w='雪';icon='❄️';wIdx=1;}
+        else if(code>=95){w='雷暴';icon='⛈️';wIdx=1;}
+        document.getElementById('rt-weather').textContent=icon+' '+w;
+        state.weatherIndex=wIdx;
+        game.save();
+    }catch(e){
+        document.getElementById('rt-weather').textContent='天气未知';
+    }
+}
+setInterval(()=>{ if(navigator.geolocation) navigator.geolocation.getCurrentPosition(p=>updateWeather(p.coords.latitude,p.coords.longitude)); },600000);
+
+const game = {
+    init() {
+        this.load();
+        this.startLoop();
+        this.switchView('farm');
+        this.updateHUD();
+        startClock();
+        initWeather();
+        const now = Date.now();
+        const diff = Math.floor((now - state.lastTick) / 1000);
+        if (diff > 5) this.processOfflineTime(diff);
+        this.bindButtonSounds();
+    },
+
+    bindButtonSounds() {
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('.btn, .nav-btn, .card, .plot');
+            if (btn) playClickSound('std');
+        }, true);
+    },
+
+    save() {
+        try {
+            const serialized = serializeState();
+            localStorage.setItem(SAVE_KEY, serialized);
+            const verify = localStorage.getItem(SAVE_KEY);
+            if (verify !== serialized) {
+                console.error('Save verification failed');
+            }
+        } catch (e) {
+            console.error('Save failed:', e);
+        }
+    },
+
+    load() {
+        try {
+            const saved = localStorage.getItem(SAVE_KEY);
+            if (saved) {
+                const loaded = deserializeState(saved);
+                state = loaded;
+            }
+        } catch (e) {
+            console.error('Load failed:', e);
+            state = createDefaultState();
+        }
+    },
+
+    startLoop() {
+        setInterval(() => this.tick(), CONFIG.tickRate);
+    },
+
+    tick() {
+        state.timeOfDay++;
+        state.lastTick = Date.now();
+        if (state.timeOfDay >= CONFIG.dayLength) {
+            state.timeOfDay = 0;
+            state.day++;
+        }
+        if (state.flowerFieldCooldown > 0) {
+            state.flowerFieldCooldown--;
+        }
+        state.plots.forEach(plot => {
+            if (plot.status === 'planted') {
+                const crop = CONFIG.crops[plot.cropId];
+                const speed = state.weatherIndex === 1 ? 1.5 : 1.0;
+                plot.progress += (1 / crop.growthTime) * speed;
+                if (plot.progress >= 1) {
+                    plot.progress = 1;
+                    plot.status = 'mature';
+                }
+            }
+        });
+        state.animals.forEach(animal => {
+            animal.timer -= 1;
+            if (animal.timer <= 0) animal.ready = true;
+        });
+        if (state.craftingQueue.length > 0) {
+            const task = state.craftingQueue[0];
+            task.timeLeft -= 1;
+            if (task.timeLeft <= 0) {
+                this.finishCrafting(task);
+                state.craftingQueue.shift();
+            }
+        }
+        if (this.currentView === 'farm') ui.renderFarm();
+        if (this.currentView === 'barn') ui.renderBarn();
+        if (this.currentView === 'craft') ui.renderCrafting();
+        this.updateHUD();
+        this.save();
+    },
+
+    processOfflineTime(seconds) {
+        const bonus = Math.floor(seconds / 10);
+        if (bonus > 0) {
+            state.gold += bonus;
+            ui.showNotification(`离线收益: +${bonus}元`);
+        }
+    },
+
+    updateHUD() {
+        document.getElementById('gold-display').innerText = state.gold;
+        document.getElementById('day-display').innerText = state.day;
+    },
+
+    switchView(viewName) {
+        this.currentView = viewName;
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            if (btn.dataset.view === viewName) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+        const main = document.getElementById('main-view');
+        main.innerHTML = '';
+        switch(viewName) {
+            case 'farm': ui.renderFarm(); break;
+            case 'barn': ui.renderBarn(); break;
+            case 'market': ui.renderMarket(); break;
+            case 'craft': ui.renderCrafting(); break;
+            case 'map': ui.renderMap(); break;
+        }
+    },
+
+    plantCrop(plotIndex, cropId) {
+        const plot = state.plots[plotIndex];
+        const crop = CONFIG.crops[cropId];
+        const inSeason = crop.seasons.includes(CONFIG.seasons[state.seasonIndex]);
+        if (!inSeason) {
+            document.getElementById('seed-tip').innerText = '过季啦，请另选种子播种吧～';
+            return;
+        }
+        if (plot.status !== 'empty') return;
+        if (state.gold < crop.cost) {
+            document.getElementById('seed-tip').innerText = '金币不足，请努力赚钱吧～';
+            return;
+        }
+        state.gold -= crop.cost;
+        plot.status = 'planted';
+        plot.cropId = cropId;
+        plot.progress = 0;
+        ui.closeOverlay();
+        ui.renderFarm();
+        this.save();
+    },
+
+    harvestCrop(index) {
+        const plot = state.plots[index];
+        if (plot.status !== 'mature') return;
+        const crop = CONFIG.crops[plot.cropId];
+        state.inventory[plot.cropId] = (state.inventory[plot.cropId] || 0) + 1;
+        plot.status = 'empty';
+        plot.cropId = null;
+        plot.progress = 0;
+        ui.showFloatText(event.clientX, event.clientY, `+1 ${crop.name}`);
+        ui.renderFarm();
+        this.save();
+    },
+
+    buyAnimal(animalId) {
+        const animal = CONFIG.animals[animalId];
+        if (state.gold < animal.cost) return;
+        state.gold -= animal.cost;
+        state.animals.push({ type: animalId, timer: animal.interval, ready: false });
+        ui.closeOverlay();
+        ui.renderBarn();
+        this.save();
+    },
+
+    collectProduct(index) {
+        const animal = state.animals[index];
+        const data = CONFIG.animals[animal.type];
+        if (!animal.ready) return;
+        state.inventory[data.product] = (state.inventory[data.product] || 0) + 1;
+        animal.ready = false;
+        animal.timer = data.interval;
+        ui.showFloatText(event.clientX, event.clientY, `+1 ${data.productIcon}`);
+        ui.renderBarn();
+        this.save();
+    },
+
+    sellItem(itemId, amount = 1) {
+        let price = 0, name = '', icon = '';
+        if (CONFIG.crops[itemId]) {
+            price = CONFIG.crops[itemId].sell;
+            name = CONFIG.crops[itemId].name;
+            icon = CONFIG.crops[itemId].icon;
+        } else if (CONFIG.flowers && CONFIG.flowers[itemId]) {
+            price = CONFIG.flowers[itemId].sell;
+            name = CONFIG.flowers[itemId].name;
+            icon = CONFIG.flowers[itemId].icon;
+        } else if (CONFIG.fish && CONFIG.fish[itemId]) {
+            price = CONFIG.fish[itemId].sell;
+            name = CONFIG.fish[itemId].name;
+            icon = CONFIG.fish[itemId].icon;
+        } else if (CONFIG.recipes[itemId]) {
+            price = CONFIG.recipes[itemId].sell;
+            name = CONFIG.recipes[itemId].name;
+            icon = CONFIG.recipes[itemId].icon;
+        } else {
+            for (let k in CONFIG.animals) {
+                if (CONFIG.animals[k].product === itemId) {
+                    price = CONFIG.animals[k].productPrice;
+                    icon = CONFIG.animals[k].productIcon;
+                    name = itemId;
+                }
+            }
+        }
+        const currentAmt = state.inventory[itemId] || 0;
+        if (currentAmt >= amount) {
+            state.inventory[itemId] -= amount;
+            state.gold += price * amount;
+            ui.showNotification(`卖出 ${icon}${name} x${amount} (+${price*amount}元)`);
+            ui.renderMarket();
+            this.save();
+        }
+    },
+
+    craftItem(recipeId) {
+        const recipe = CONFIG.recipes[recipeId];
+        for (let [ing, count] of Object.entries(recipe.ingredients)) {
+            if ((state.inventory[ing] || 0) < count) {
+                ui.showNotification("材料不足!");
+                return;
+            }
+        }
+        for (let [ing, count] of Object.entries(recipe.ingredients)) {
+            state.inventory[ing] -= count;
+        }
+        state.craftingQueue.push({ id: recipeId, timeLeft: recipe.time, totalTime: recipe.time });
+        ui.renderCrafting();
+        this.save();
+    },
+
+    finishCrafting(task) {
+        const recipe = CONFIG.recipes[task.id];
+        state.inventory[task.id] = (state.inventory[task.id] || 0) + 1;
+        ui.showNotification(`${recipe.name} 制作完成!`);
+        this.save();
+    },
+
+    explore(areaId) {
+        if (state.gold < 30) {
+            ui.showNotification("需要 30元 路费!");
+            return;
+        }
+        state.gold -= 30;
+        
+        const roll = Math.random();
+        
+        if (roll < 0.15) {
+            ui.showNotification('探索了一番，什么也没找到...');
+            this.save();
+            return;
+        }
+        
+        if (areaId === 'lake') {
+            const lakeRoll = Math.random();
+            if (lakeRoll < 0.001) {
+                state.inventory['pearl'] = (state.inventory['pearl'] || 0) + 1;
+                ui.showNotification('💎 奇迹！在湖中发现天然淡水珍珠！售价50000元！');
+                ui.showFloatText(event.clientX, event.clientY, '+1 天然淡水珍珠');
+                this.save();
+                return;
+            }
+            if (lakeRoll < 0.601) {
+                const fishTypes = ['grass_carp', 'crucian'];
+                const caughtFish = fishTypes[Math.floor(Math.random() * fishTypes.length)];
+                const amt = Math.floor(Math.random() * 3) + 1;
+                state.inventory[caughtFish] = (state.inventory[caughtFish] || 0) + amt;
+                const fishData = CONFIG.fish[caughtFish];
+                ui.showNotification(`钓到 ${fishData.icon} ${fishData.name} x${amt}!`);
+                ui.showFloatText(event.clientX, event.clientY, `+${amt} ${fishData.name}`);
+                this.save();
+                return;
+            }
+        }
+        
+        const finds = Object.keys(CONFIG.crops);
+        const find = finds[Math.floor(Math.random() * finds.length)];
+        const amt = Math.floor(Math.random() * 3) + 1;
+        state.inventory[find] = (state.inventory[find] || 0) + amt;
+        ui.showNotification(`探索发现: ${CONFIG.crops[find].icon} ${CONFIG.crops[find].name} x${amt}!`);
+        this.save();
+    },
+
+    searchFlowerField() {
+        if (state.flowerFieldCooldown > 0) {
+            ui.showNotification(`花田恢复中，还剩 ${state.flowerFieldCooldown} 秒`);
+            return;
+        }
+        const currentSeason = CONFIG.seasons[state.seasonIndex];
+        let foundFlower = null;
+        let flowerName = '';
+        let flowerIcon = '';
+        
+        if (currentSeason === 'Fall') {
+            if (Math.random() < 0.6) {
+                foundFlower = 'osmanthus';
+                flowerName = '桂花';
+                flowerIcon = '🌼';
+            }
+        } else if (currentSeason === 'Spring') {
+            if (Math.random() < 0.6) {
+                foundFlower = 'camellia';
+                flowerName = '山茶花';
+                flowerIcon = '🌺';
+            }
+        }
+        
+        if (foundFlower) {
+            const amt = Math.floor(Math.random() * 2) + 1;
+            state.inventory[foundFlower] = (state.inventory[foundFlower] || 0) + amt;
+            ui.showFloatText(event.clientX, event.clientY, `+${amt} ${flowerName}`);
+            ui.showNotification(`在花田中发现 ${flowerIcon} ${flowerName} x${amt}!`);
+        } else {
+            ui.showNotification('花田中转了一圈，什么也没找到...');
+        }
+        
+        state.flowerFieldCooldown = 30;
+        ui.renderFarm();
+        this.save();
+    }
+};
+
+const ui = {
+    showNotification(msg) {
+        const area = document.getElementById('notification-area');
+        const el = document.createElement('div');
+        el.className = 'notify';
+        el.innerText = msg;
+        area.appendChild(el);
+        setTimeout(() => el.remove(), 3000);
+    },
+
+    showFloatText(x, y, text) {
+        const el = document.createElement('div');
+        el.className = 'float-text';
+        el.style.left = x + 'px';
+        el.style.top = y + 'px';
+        el.innerText = text;
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 1000);
+    },
+
+    closeOverlay() {
+        document.getElementById('overlay').classList.remove('show');
+        document.getElementById('seed-tip').innerText = '';
+    },
+
+    openOverlay(title, contentHtml, showTabs=false, tabsHtml='') {
+        document.getElementById('overlay-title').innerText = title;
+        document.getElementById('overlay-content').innerHTML = contentHtml;
+        document.getElementById('seed-tip').innerText = '';
+        const tabsEl = document.getElementById('overlay-tabs');
+        if (showTabs) {
+            tabsEl.style.display = 'flex';
+            tabsEl.innerHTML = tabsHtml;
+        } else {
+            tabsEl.style.display = 'none';
+            tabsEl.innerHTML = '';
+        }
+        document.getElementById('overlay').classList.add('show');
+    },
+
+    renderSeedCards(filter) {
+        let html = '';
+        for (let [id, crop] of Object.entries(CONFIG.crops)) {
+            if (filter && crop.category !== filter) continue;
+            const inSeason = crop.seasons.includes(CONFIG.seasons[state.seasonIndex]);
+            const seasonText = inSeason ? '<span style="color:#16161a; font-size:11px;">当季</span>' : '<span style="color:#888; font-size:11px;">过季</span>';
+            html += `
+                <div class="card" style="width:110px; height:130px;" onclick="game.plantCrop(${ui.selectedPlot}, '${id}')">
+                    <div style="font-size:28px; margin-bottom:4px;">${crop.icon}</div>
+                    <div style="font-size:12px; font-weight:bold; margin-bottom:2px;">${crop.name}</div>
+                    <div style="font-size:11px;">${crop.cost}元</div>
+                    <div style="margin-top:2px;">${seasonText}</div>
+                </div>
+            `;
+        }
+        document.getElementById('overlay-content').innerHTML = html;
+    },
+
+    openSeedShop() {
+        const tabsHtml = `
+            <button id="tab-veg" class="btn active-tab" style="padding:4px 16px; font-size:13px;">蔬菜</button>
+            <button id="tab-fruit" class="btn" style="padding:4px 16px; font-size:13px;">水果</button>
+        `;
+        this.openOverlay('选择种子', '', true, tabsHtml);
+        this.switchSeedTab('vegetable');
+        document.getElementById('tab-veg').onclick = () => this.switchSeedTab('vegetable');
+        document.getElementById('tab-fruit').onclick = () => this.switchSeedTab('fruit');
+    },
+
+    switchSeedTab(cat) {
+        const vegBtn = document.getElementById('tab-veg');
+        const fruitBtn = document.getElementById('tab-fruit');
+        if (vegBtn) vegBtn.classList.toggle('active-tab', cat === 'vegetable');
+        if (fruitBtn) fruitBtn.classList.toggle('active-tab', cat === 'fruit');
+        document.getElementById('seed-tip').innerText = '';
+        this.renderSeedCards(cat);
+    },
+
+    openAnimalShop() {
+        let html = '';
+        for (let [id, animal] of Object.entries(CONFIG.animals)) {
+            html += `
+                <div class="card" style="width:110px; height:130px;" onclick="game.buyAnimal('${id}')">
+                    <div style="font-size:32px; margin-bottom:4px;">${animal.icon}</div>
+                    <div style="font-size:13px; font-weight:bold;">${animal.name}</div>
+                    <div style="font-size:11px; margin:4px 0;">产出: ${animal.productIcon}</div>
+                    <div style="font-size:13px; font-weight:bold;">${animal.cost}元</div>
+                </div>
+            `;
+        }
+        this.openOverlay('牲畜市场', html);
+    },
+
+    renderFarm() {
+        const main = document.getElementById('main-view');
+        const currentSeason = CONFIG.seasons[state.seasonIndex];
+        let html = `
+            <div class="view-container">
+            <div style="margin-bottom:10px; font-size:15px; font-weight:bold; color:#16161a;">我的田地</div>
+            <div class="grid gap-2 farm-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 12px;">
+        `;
+        state.plots.forEach((plot, index) => {
+            let content = '', clickAction = '', extraClass = '';
+            if (plot.status === 'empty') {
+                content = '<span style="font-size:24px; opacity:0.3;">⸻</span>';
+                clickAction = `onclick="ui.selectedPlot=${index}; ui.openSeedShop()"`;
+            } else if (plot.status === 'planted') {
+                const crop = CONFIG.crops[plot.cropId];
+                const stage = plot.progress < 0.3 ? '🌱' : plot.progress < 0.6 ? '🌿' : '🌾';
+                content = `<div style="font-size:28px;">${stage}</div><div style="position:absolute; bottom:4px; left:4px; right:4px; height:3px; background:#ddd; border:1px solid #16161a;"><div style="height:100%; background:#16161a; width: ${plot.progress * 100}%"></div></div>`;
+            } else if (plot.status === 'mature') {
+                const crop = CONFIG.crops[plot.cropId];
+                content = `<div style="font-size:32px;" class="pop-anim">${crop.icon}</div>`;
+                clickAction = `onclick="game.harvestCrop(${index})"`;
+                extraClass = 'planted';
+            }
+            html += `<div class="plot ${extraClass}" ${clickAction}>${content}</div>`;
+        });
+        html += `</div>`;
+        
+        const flowerAvailable = currentSeason === 'Spring' || currentSeason === 'Fall';
+        const flowerSeasonText = currentSeason === 'Spring' ? '春日花田 · 山茶盛开' : currentSeason === 'Fall' ? '秋日花田 · 金桂飘香' : '花田休耕中';
+        const flowerIcon = currentSeason === 'Spring' ? '🌺' : currentSeason === 'Fall' ? '🌼' : '🌱';
+        const cooldownText = state.flowerFieldCooldown > 0 ? ` (冷却: ${state.flowerFieldCooldown}s)` : '';
+        
+        html += `
+            <div class="flower-field" onclick="game.searchFlowerField()">
+                <div class="flower-field-title">${flowerIcon} ${flowerSeasonText}${cooldownText}</div>
+                <div class="flower-field-desc">
+                    ${flowerAvailable 
+                        ? '点击搜寻花卉，每次搜寻需要30秒恢复' 
+                        : '非花季，花田处于休耕状态（仅春秋开放）'}
+                </div>
+            </div>
+            </div>
+        `;
+        
+        main.innerHTML = html;
+    },
+
+    renderBarn() {
+        const main = document.getElementById('main-view');
+        let html = `
+            <div class="view-container">
+            <div class="flex justify-between items-center" style="margin-bottom:12px;">
+                <div style="font-size:15px; font-weight:bold; color:#16161a;">动物牧场</div>
+                <button class="btn" style="padding:4px 12px; font-size:12px;" onclick="ui.openAnimalShop()">+ 购买</button>
+            </div>
+            <div class="grid gap-2 barn-grid" style="grid-template-columns: repeat(2, 1fr);">
+        `;
+        if (state.animals.length === 0) {
+            html += `<div style="grid-column: span 2; text-align:center; opacity:0.5; padding:40px 0; font-size:14px;">牧场空空如也...</div>`;
+        }
+        state.animals.forEach((animal, index) => {
+            const data = CONFIG.animals[animal.type];
+            const isReady = animal.ready;
+            html += `
+                <div class="card" style="padding:10px;">
+                    <div style="font-size:36px; margin-bottom:6px;">${data.icon}</div>
+                    <div style="font-size:14px; font-weight:bold; margin-bottom:8px;">${data.name}</div>
+                    ${isReady ? `
+                        <button class="btn" style="padding:4px 12px; font-size:12px; background:#16161a; color:#f8f7f2; box-shadow: 2px 2px 0 #555;" onclick="game.collectProduct(${index})">
+                            收取 ${data.productIcon}
+                        </button>
+                    ` : `
+                        <div style="width:100%; height:4px; background:#ddd; border:1px solid #16161a; margin-bottom:4px;">
+                            <div style="height:100%; background:#16161a; width: ${(1 - animal.timer/data.interval)*100}%"></div>
+                        </div>
+                        <div style="font-size:11px; color:#555;">生产中...</div>
+                    `}
+                </div>
+            `;
+        });
+        html += `</div></div>`;
+        main.innerHTML = html;
+    },
+
+    renderMarket() {
+        const main = document.getElementById('main-view');
+        let html = `<div class="view-container"><div style="margin-bottom:10px; font-size:15px; font-weight:bold; color:#16161a;">农场商店</div><div class="grid gap-2 market-grid" style="grid-template-columns: repeat(2, 1fr);">`;
+        let hasItems = false;
+        for (let [id, count] of Object.entries(state.inventory)) {
+            if (count > 0) {
+                hasItems = true;
+                let price = 0, icon = '', name = '';
+                if (CONFIG.crops[id]) {
+                    price = CONFIG.crops[id].sell;
+                    icon = CONFIG.crops[id].icon;
+                    name = CONFIG.crops[id].name;
+                } else if (CONFIG.flowers && CONFIG.flowers[id]) {
+                    price = CONFIG.flowers[id].sell;
+                    icon = CONFIG.flowers[id].icon;
+                    name = CONFIG.flowers[id].name;
+                } else if (CONFIG.fish && CONFIG.fish[id]) {
+                    price = CONFIG.fish[id].sell;
+                    icon = CONFIG.fish[id].icon;
+                    name = CONFIG.fish[id].name;
+                } else if (id === 'pearl') {
+                    price = 50000;
+                    icon = '💎';
+                    name = '天然淡水珍珠';
+                } else if (CONFIG.recipes[id]) {
+                    price = CONFIG.recipes[id].sell;
+                    icon = CONFIG.recipes[id].icon;
+                    name = CONFIG.recipes[id].name;
+                } else {
+                    for (let k in CONFIG.animals) {
+                        if (CONFIG.animals[k].product === id) {
+                            price = CONFIG.animals[k].productPrice;
+                            icon = CONFIG.animals[k].productIcon;
+                            name = id;
+                        }
+                    }
+                }
+                html += `
+                    <div class="card" style="padding:8px;">
+                        <div style="font-size:28px; margin-bottom:4px;">${icon}</div>
+                        <div style="font-size:13px; font-weight:bold;">${name}</div>
+                        <div style="font-size:11px; margin:4px 0;">持有: ${count}</div>
+                        <div style="font-size:13px; font-weight:bold; margin-bottom:6px;">${price}元</div>
+                        <div class="flex gap-2" style="width:100%;">
+                            <button class="btn flex-1" style="padding:2px; font-size:11px;" onclick="game.sellItem('${id}', 1)">卖1</button>
+                            <button class="btn flex-1" style="padding:2px; font-size:11px;" onclick="game.sellItem('${id}', ${count})">全卖</button>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        if (!hasItems) {
+            html += `<div style="grid-column: span 2; text-align:center; opacity:0.5; padding:40px 0; font-size:14px;">背包里没有东西可卖...</div>`;
+        }
+        html += `</div></div>`;
+        main.innerHTML = html;
+    },
+
+    renderCrafting() {
+        const main = document.getElementById('main-view');
+        let html = `<div class="view-container"><div style="margin-bottom:10px; font-size:15px; font-weight:bold; color:#16161a;">制作工坊</div>`;
+        if (state.craftingQueue.length > 0) {
+            const task = state.craftingQueue[0];
+            const r = CONFIG.recipes[task.id];
+            html += `
+                <div style="border: 2px solid #16161a; padding:8px; margin-bottom:12px; background:#fff; box-shadow: 2px 2px 0 #16161a;">
+                    <div style="font-size:13px; font-weight:bold; margin-bottom:4px;">正在制作: ${r.icon} ${r.name}</div>
+                    <div style="width:100%; height:6px; background:#ddd; border:1px solid #16161a;">
+                        <div style="height:100%; background:#16161a; width: ${(1 - task.timeLeft/task.totalTime)*100}%"></div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        const categories = {
+            dry: '🍂 晾晒加工',
+            food: '🍰 糕点制作',
+            tea: '🍵 茶艺工坊',
+            gift: '🎁 礼盒包装',
+            other: '🔧 其他制作'
+        };
+        
+        const categorizedRecipes = {};
+        for (let [id, recipe] of Object.entries(CONFIG.recipes)) {
+            const cat = recipe.category || 'other';
+            if (!categorizedRecipes[cat]) categorizedRecipes[cat] = [];
+            categorizedRecipes[cat].push([id, recipe]);
+        }
+        
+        for (let [cat, recipes] of Object.entries(categorizedRecipes)) {
+            const catName = categories[cat] || cat;
+            html += `<div style="font-size:13px; font-weight:bold; margin: 10px 0 6px 0; color:#555; border-bottom: 1px dashed #16161a; padding-bottom: 4px;">${catName}</div>`;
+            html += `<div class="grid gap-2 craft-grid" style="grid-template-columns: 1fr;">`;
+            
+            for (let [id, recipe] of recipes) {
+                let canCraft = true;
+                let ingHtml = '';
+                for (let [ing, count] of Object.entries(recipe.ingredients)) {
+                    const has = state.inventory[ing] || 0;
+                    if (has < count) canCraft = false;
+                    let ingIcon = ing, ingName = ing;
+                    if (CONFIG.crops[ing]) { ingIcon = CONFIG.crops[ing].icon; ingName = CONFIG.crops[ing].name; }
+                    else if (CONFIG.flowers && CONFIG.flowers[ing]) { ingIcon = CONFIG.flowers[ing].icon; ingName = CONFIG.flowers[ing].name; }
+                    else if (CONFIG.fish && CONFIG.fish[ing]) { ingIcon = CONFIG.fish[ing].icon; ingName = CONFIG.fish[ing].name; }
+                    else { for (let k in CONFIG.animals) { if (CONFIG.animals[k].product === ing) { ingIcon = CONFIG.animals[k].productIcon; break; } } }
+                    ingHtml += `<span style="color:${has >= count ? '#16161a' : '#aaa'}; font-size:11px; margin-right:6px;">${ingIcon}x${count}</span>`;
+                }
+                html += `
+                    <div class="card" style="flex-direction:row; justify-content:space-between; padding:10px; opacity:${canCraft?1:0.5};">
+                        <div class="flex items-center gap-2">
+                            <div style="font-size:32px;">${recipe.icon}</div>
+                            <div>
+                                <div style="font-size:14px; font-weight:bold;">${recipe.name}</div>
+                                <div style="font-size:11px; margin-top:2px;">${ingHtml}</div>
+                                <div style="font-size:11px; margin-top:2px; color:#555;">耗时: ${recipe.time}s | 售价: ${recipe.sell}元</div>
+                            </div>
+                        </div>
+                        <button class="btn" style="padding:4px 16px; font-size:13px;" onclick="game.craftItem('${id}')" ${!canCraft ? 'disabled' : ''}>制作</button>
+                    </div>
+                `;
+            }
+            html += `</div>`;
+        }
+        html += `</div>`;
+        main.innerHTML = html;
+    },
+
+    renderMap() {
+        const main = document.getElementById('main-view');
+        main.innerHTML = `
+            <div class="view-container flex flex-col items-center justify-center h-full">
+                <div style="font-size:16px; font-weight:bold; margin-bottom:20px; color:#16161a;">岛屿探索</div>
+                <div style="position:relative; width:100%; max-width:min(60vh, 420px); aspect-ratio:1; background:#e8e6df; border: 2px solid #16161a; box-shadow: 3px 3px 0 #16161a;">
+                    <div style="position:absolute; top:8%; left:8%; width:26%; height:26%; background:#fff; border:2px solid #16161a; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:2px 2px 0 #16161a;" onclick="game.explore('forest')">
+                        <span style="font-size:24px;">🌲</span>
+                    </div>
+                    <div style="position:absolute; top:8%; right:8%; width:26%; height:26%; background:#fff; border:2px solid #16161a; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:2px 2px 0 #16161a;" onclick="game.explore('lake')">
+                        <span style="font-size:24px;">🌊</span>
+                    </div>
+                    <div style="position:absolute; bottom:8%; left:8%; width:26%; height:26%; background:#fff; border:2px solid #16161a; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:2px 2px 0 #16161a;" onclick="game.explore('meadow')">
+                        <span style="font-size:24px;">🌸</span>
+                    </div>
+                    <div style="position:absolute; bottom:8%; right:8%; width:26%; height:26%; background:#fff; border:2px solid #16161a; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:2px 2px 0 #16161a;" onclick="game.explore('mountain')">
+                        <span style="font-size:24px;">⛰️</span>
+                    </div>
+                    <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:18%; height:18%; background:#f8f7f2; border:2px solid #16161a; display:flex; align-items:center; justify-content:center;">
+                        <span style="font-size:18px;">🏠</span>
+                    </div>
+                </div>
+                <div style="margin-top:16px; font-size:12px; color:#16161a; border: 1px dashed #16161a; padding: 6px 12px;">
+                    点击区域探索 (花费 30元)
+                </div>
+            </div>
+        `;
+    }
+};
+
+document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => game.switchView(btn.dataset.view));
+});
+document.getElementById('overlay-close').addEventListener('click', ui.closeOverlay);
+
+window.addEventListener('beforeunload', () => {
+    game.save();
+});
+
+window.addEventListener('pagehide', () => {
+    game.save();
+});
+
+window.onload = () => game.init();
+</script>
+</body>
+</html>
