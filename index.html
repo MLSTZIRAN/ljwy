@@ -246,6 +246,18 @@ body {
     color: #555;
 }
 
+/* 核心修复：让主视图和容器在竖屏和横屏下均保持正确的高度和排列 */
+#main-view {
+    display: flex;
+    flex-direction: column;
+}
+.view-container {
+    width: 100%;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
 /* 横屏适配 */
 @media (orientation: landscape) {
     body { align-items: stretch; }
@@ -315,13 +327,10 @@ body {
         width: calc(100% - 80px);
         height: calc(100% - 36px);
         padding: 20px;
-        display: flex;
-        flex-direction: column;
         align-items: center;
         justify-content: flex-start;
     }
     .view-container {
-        width: 100%;
         max-width: 880px;
         margin: 0 auto;
     }
@@ -1058,7 +1067,7 @@ const ui = {
             <div class="grid gap-2 barn-grid" style="grid-template-columns: repeat(2, 1fr);">
         `;
         if (state.animals.length === 0) {
-            html += `<div style="grid-column: span 2; text-align:center; opacity:0.5; padding:40px 0; font-size:14px;">牧场空空如也...</div>`;
+            html += `<div style="grid-column: 1 / -1; text-align:center; opacity:0.5; padding:40px 0; font-size:14px;">牧场空空如也...</div>`;
         }
         state.animals.forEach((animal, index) => {
             const data = CONFIG.animals[animal.type];
@@ -1136,7 +1145,7 @@ const ui = {
             }
         }
         if (!hasItems) {
-            html += `<div style="grid-column: span 2; text-align:center; opacity:0.5; padding:40px 0; font-size:14px;">背包里没有东西可卖...</div>`;
+            html += `<div style="grid-column: 1 / -1; text-align:center; opacity:0.5; padding:40px 0; font-size:14px;">背包里没有东西可卖...</div>`;
         }
         html += `</div></div>`;
         main.innerHTML = html;
@@ -1214,7 +1223,7 @@ const ui = {
     renderMap() {
         const main = document.getElementById('main-view');
         main.innerHTML = `
-            <div class="view-container flex flex-col items-center justify-center h-full">
+            <div class="view-container flex flex-col items-center justify-center">
                 <div style="font-size:16px; font-weight:bold; margin-bottom:20px; color:#16161a;">岛屿探索</div>
                 <div style="position:relative; width:100%; max-width:min(60vh, 420px); aspect-ratio:1; background:#e8e6df; border: 2px solid #16161a; box-shadow: 3px 3px 0 #16161a;">
                     <div style="position:absolute; top:8%; left:8%; width:26%; height:26%; background:#fff; border:2px solid #16161a; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:2px 2px 0 #16161a;" onclick="game.explore('forest')">
