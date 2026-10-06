@@ -597,14 +597,16 @@ setInterval(()=>{ if(navigator.geolocation) navigator.geolocation.getCurrentPosi
 const game = {
     init() {
         this.load();
+        
+        const now = Date.now();
+        const diff = Math.floor((now - state.lastTick) / 1000);
+        if (diff > 5) this.processOfflineTime(diff);
+
         this.startLoop();
         this.switchView('farm');
         this.updateHUD();
         startClock();
         initWeather();
-        const now = Date.now();
-        const diff = Math.floor((now - state.lastTick) / 1000);
-        if (diff > 5) this.processOfflineTime(diff);
         this.bindButtonSounds();
     },
 
@@ -686,11 +688,67 @@ const game = {
     },
 
     processOfflineTime(seconds) {
-        const bonus = Math.floor(seconds / 10);
-        if (bonus > 0) {
-            state.gold += bonus;
-            ui.showNotification(`离线收益: +${bonus}元`);
+        if (seconds <= 5) return;
+
+        const weatherSpeed = state.weatherIndex === 1 ? 1.5 : 1.0;
+        let maturedCount = 0;
+        let readyAnimals = 0;
+        let craftFinished = 0;
+
+        // 1. 推进作物生长
+        state.plots.forEach(plot => {
+            if (plot.status === 'planted') {
+                const crop = CONFIG.crops[plot.cropId];
+                if (!crop) return;
+                plot.progress += (1 / crop.growthTime) * weatherSpeed * seconds;
+                if (plot.progress >= 1) {
+                    plot.progress = 1;
+                    plot.status = 'mature';
+                    maturedCount++;
+                }
+            }
+        });
+
+        // 2. 推进动物生产 (遵循原tick逻辑：只推进到"可收取"状态)
+        state.animals.forEach(animal => {
+            if (!animal.ready) {
+                animal.timer -= seconds;
+                if (animal.timer <= 0) {
+                    animal.ready = true;
+                    animal.timer = 0;
+                    readyAnimals++;
+                }
+            }
+        });
+
+        // 3. 推进工坊合成队列冷却 (连续结算)
+        let remaining = seconds;
+        while (state.craftingQueue.length > 0 && remaining > 0) {
+            const task = state.craftingQueue[0];
+            if (task.timeLeft <= remaining) {
+                remaining -= task.timeLeft;
+                this.finishCrafting(task);
+                state.craftingQueue.shift();
+                craftFinished++;
+            } else {
+                task.timeLeft -= remaining;
+                remaining = 0;
+            }
         }
+
+        // 4. 离线金币收益 (保留原逻辑)
+        const bonus = Math.floor(seconds / 10);
+        state.gold += bonus;
+        state.lastTick = Date.now();
+
+        // 弹出离线结算提示
+        let msg = `离线收益：金币 +${bonus}`;
+        if (maturedCount > 0) msg += `，${maturedCount}块作物成熟`;
+        if (readyAnimals > 0) msg += `，${readyAnimals}只动物可收取`;
+        if (craftFinished > 0) msg += `，完成${craftFinished}个制作`;
+        ui.showNotification(msg);
+
+        this.save();
     },
 
     updateHUD() {
