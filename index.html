@@ -505,7 +505,7 @@ function serializeState() {
         plots: state.plots,
         animals: state.animals,
         craftingQueue: state.craftingQueue,
-        lastTick: Date.now(), // 保存时，记录当前时间
+        lastTick: Date.now(), 
         flowerFieldCooldown: state.flowerFieldCooldown
     });
 }
@@ -545,8 +545,6 @@ function deserializeState(jsonStr) {
         if (typeof result.timeOfDay !== 'number') result.timeOfDay = 0;
         if (typeof result.flowerFieldCooldown !== 'number') result.flowerFieldCooldown = 0;
         
-        // 【核心修复】：如果存档里的 lastTick 不合法或大于当前时间，才重置为当前时间
-        // 否则保留离开时的真实时间，用于计算离线收益
         if (typeof result.lastTick !== 'number' || result.lastTick > Date.now()) {
             result.lastTick = Date.now();
         }
@@ -715,7 +713,7 @@ const game = {
             }
         });
 
-        // 2. 推进动物生产 (遵循原tick逻辑：只推进到"可收取"状态)
+        // 2. 推进动物生产
         state.animals.forEach(animal => {
             if (!animal.ready) {
                 animal.timer -= seconds;
@@ -727,7 +725,7 @@ const game = {
             }
         });
 
-        // 3. 推进工坊合成队列冷却 (连续结算)
+        // 3. 推进工坊合成队列冷却
         let remaining = seconds;
         while (state.craftingQueue.length > 0 && remaining > 0) {
             const task = state.craftingQueue[0];
@@ -742,12 +740,19 @@ const game = {
             }
         }
 
-        // 4. 离线金币收益 (保留原逻辑)
+        // 4. 推进花田冷却
+        if (state.flowerFieldCooldown > 0) {
+            state.flowerFieldCooldown -= seconds;
+            if (state.flowerFieldCooldown < 0) {
+                state.flowerFieldCooldown = 0;
+            }
+        }
+
+        // 5. 离线金币收益
         const bonus = Math.floor(seconds / 10);
         state.gold += bonus;
         state.lastTick = Date.now();
 
-        // 弹出离线结算提示
         let msg = `离线收益：金币 +${bonus}`;
         if (maturedCount > 0) msg += `，${maturedCount}块作物成熟`;
         if (readyAnimals > 0) msg += `，${readyAnimals}只动物可收取`;
