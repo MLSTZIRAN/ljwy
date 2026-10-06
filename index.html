@@ -505,7 +505,7 @@ function serializeState() {
         plots: state.plots,
         animals: state.animals,
         craftingQueue: state.craftingQueue,
-        lastTick: Date.now(),
+        lastTick: Date.now(), // 保存时，记录当前时间
         flowerFieldCooldown: state.flowerFieldCooldown
     });
 }
@@ -544,7 +544,13 @@ function deserializeState(jsonStr) {
         if (typeof result.weatherIndex !== 'number') result.weatherIndex = 0;
         if (typeof result.timeOfDay !== 'number') result.timeOfDay = 0;
         if (typeof result.flowerFieldCooldown !== 'number') result.flowerFieldCooldown = 0;
-        result.lastTick = Date.now();
+        
+        // 【核心修复】：如果存档里的 lastTick 不合法或大于当前时间，才重置为当前时间
+        // 否则保留离开时的真实时间，用于计算离线收益
+        if (typeof result.lastTick !== 'number' || result.lastTick > Date.now()) {
+            result.lastTick = Date.now();
+        }
+        
         return result;
     } catch (e) {
         return createDefaultState();
